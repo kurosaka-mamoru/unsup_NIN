@@ -2,7 +2,7 @@ require("paths")
 require("xlua")
 require("image")
 require("unsup")
-
+require 'nn';
 package.path = package.path..';lib/kmeans-learning-torch/?.lua'
 require("kmeans")
 require("extract")
@@ -23,6 +23,13 @@ local nkernel1 = 32
 local nkernel2 = 32
 local fanIn1 = 1
 local fanIn2 = 4
+
+-- define net
+
+local net = nn.Sequential()
+net:add(nn.SpatialConvolution(3, 128, 5, 5))
+net:add(nn.ReLU())
+
 
 print("==> download dataset")
 if not paths.dirp('cifar-10-batches-t7') then
@@ -72,3 +79,40 @@ for i = 1,numPatches do
    patches[i] = patches[i]:add(-patches[i]:mean())
    patches[i] = patches[i]:div(math.sqrt(patches[i]:var()+10))
 end
+
+if opt.whiten then
+   print("==> whiten patches")
+   local function zca_whiten(x)
+      local dims = x:size()
+      local nsamples = dims[1]
+      local ndims    = dims[2]
+      local M = torch.mean(x, 1)
+      local D, V = unsup.pcacov(x)
+      x:add(torch.ger(torch.ones(nsamples), M:squeeze()):mul(-1))
+      local diag = torch.diag(D:add(0.1):sqrt():pow(-1))
+      local P = V * diag * V:t()
+      x = x * P
+      return x, M, P
+   end
+   patches, M, P = zca_whiten(patches)
+end
+
+
+print("==> find clusters")
+local ncentroids = 1600
+kernels, counts = unsup.kmeans_modified(patches, ncentroids, nil, 0.1, 1, 1000, nil, true)
+
+
+print("==> select distinct features")
+local j = 0
+for i = 1,ncentroids do
+   if counts[i] > 0 then
+      j = j + 1
+      kernels[{j,{}}] = kernels[{i,{}}]
+      counts[j] = counts[i]
+   end
+end
+kernels = kernels[{{1,j},{}}]
+counts  = counts[{{1,j}}]
+-- just select 1600 kernels for now
+
