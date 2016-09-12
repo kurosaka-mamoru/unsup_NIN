@@ -31,3 +31,44 @@ if not paths.dirp('cifar-10-batches-t7') then
    os.execute('tar xvf ' .. paths.basename(tar))
 end
 
+print("==> load dataset")
+local trainData = {
+   data = torch.Tensor(50000, CIFAR_dim[1]*CIFAR_dim[2]*CIFAR_dim[3]),
+   labels = torch.Tensor(50000),
+   size = function() return trsize end
+}
+for i = 0, 4 do
+   local subset = torch.load('cifar-10-batches-t7/data_batch_' .. (i+1) .. '.t7', 'ascii')
+   trainData.data[{ {i*10000+1, (i+1)*10000} }] = subset.data:t()
+   trainData.labels[{ {i*10000+1, (i+1)*10000} }] = subset.labels
+end
+trainData.labels = trainData.labels + 1
+
+trainData.data = trainData.data[{ {1,trsize} }]
+trainData.labels = trainData.labels[{ {1,trsize} }]
+trainData.data = trainData.data:reshape(trsize,CIFAR_dim[1],CIFAR_dim[2],CIFAR_dim[3])
+
+local subset = torch.load('cifar-10-batches-t7/test_batch.t7', 'ascii')
+local testData = {
+   data = subset.data:t():float(),
+   labels = subset.labels[1]:float(),
+   size = function() return tesize end
+}
+testData.labels = testData.labels + 1
+
+testData.data   = testData.data[{ {1,tesize} }]
+testData.labels = testData.labels[{ {1,tesize} }]
+testData.data = testData.data:reshape(tesize,3,32,32)
+
+
+print("==> extract patches")
+local numPatches = 50000
+local patches = torch.zeros(numPatches, kSize*kSize*CIFAR_dim[1])
+for i = 1,numPatches do
+   xlua.progress(i,numPatches)
+   local r = torch.random(CIFAR_dim[2] - kSize + 1)
+   local c = torch.random(CIFAR_dim[3] - kSize + 1)
+   patches[i] = trainData.data[{math.fmod(i-1,trsize)+1,{},{r,r+kSize-1},{c,c+kSize-1}}]
+   patches[i] = patches[i]:add(-patches[i]:mean())
+   patches[i] = patches[i]:div(math.sqrt(patches[i]:var()+10))
+end
