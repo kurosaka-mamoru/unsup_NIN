@@ -115,4 +115,3 @@ end
 kernels = kernels[{{1,j},{}}]
 counts  = counts[{{1,j}}]
 -- just select 1600 kernels for now
-
