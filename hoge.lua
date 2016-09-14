@@ -23,13 +23,14 @@ local nkernel1 = 32
 local nkernel2 = 32
 local fanIn1 = 1
 local fanIn2 = 4
+local nkernel = 200;
 
 -- define net
 
 local net = nn.Sequential()
-net:add(nn.SpatialConvolution(3, 128, 5, 5))
+net:add(nn.SpatialConvolution(3, nkernel, kSize, kSize))
 net:add(nn.ReLU())
-
+net:add(nn.SpatialMaxPooling(2,2,2,2))
 
 print("==> download dataset")
 if not paths.dirp('cifar-10-batches-t7') then
@@ -99,19 +100,6 @@ end
 
 
 print("==> find clusters")
-local ncentroids = 1600
-kernels, counts = unsup.kmeans_modified(patches, ncentroids, nil, 0.1, 1, 1000, nil, true)
+local ncentroids = nkernel
+kernels, counts = unsup.kmeans_modified(patches, ncentroids, nil, 0.1, 10, 1000, nil, true)
 
-
-print("==> select distinct features")
-local j = 0
-for i = 1,ncentroids do
-   if counts[i] > 0 then
-      j = j + 1
-      kernels[{j,{}}] = kernels[{i,{}}]
-      counts[j] = counts[i]
-   end
-end
-kernels = kernels[{{1,j},{}}]
-counts  = counts[{{1,j}}]
--- just select 1600 kernels for now
