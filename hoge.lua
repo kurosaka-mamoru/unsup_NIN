@@ -103,3 +103,6 @@ print("==> find clusters")
 local ncentroids = nkernel
 kernels, counts = unsup.kmeans_modified(patches, ncentroids, nil, 0.1, 10, 1000, nil, true)
 
+
+net.modules[1].weight = kernels:reshape(200,3,7,7)
+
