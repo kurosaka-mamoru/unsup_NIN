@@ -1,4 +1,3 @@
-require('mobdebug').start()
 require("paths")
 require("xlua")
 require("image")
@@ -20,18 +19,19 @@ local CIFAR_dim = {3, 32, 32}
 local trsize = 50000
 local tesize = 10000
 local kSize = 7
-local nkernel1 = 32
-local nkernel2 = 32
-local fanIn1 = 1
-local fanIn2 = 4
+--local nkernel1 = 32
+--local nkernel2 = 32
+--local fanIn1 = 1
+--local fanIn2 = 4
 local nkernel = 200;
 
 -- define net
 
-local net = nn.Sequential()
-net:add(nn.SpatialConvolution(3, nkernel, kSize, kSize))
-net:add(nn.ReLU())
-net:add(nn.SpatialMaxPooling(2,2,2,2))
+local recog_net = nn.Sequential()
+recog_net:add(nn.SpatialConvolution(3, nkernel, kSize, kSize))
+recog_net:add(nn.ReLU())
+recog_net:add(nn.SpatialMaxPooling(2,2,2,2))
+
 
 print("==> download dataset")
 if not paths.dirp('cifar-10-batches-t7') then
