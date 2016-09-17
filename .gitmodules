@@ -1,3 +1,0 @@
-[submodule "kmeans-learning-torch"]
-	path = kmeans-learning-torch
-	url = https://github.com/jhjin/kmeans-learning-torch.git
