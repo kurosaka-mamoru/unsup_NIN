@@ -1,3 +1,4 @@
+require('mobdebug').start()
 require("paths")
 require("xlua")
 require("image")
